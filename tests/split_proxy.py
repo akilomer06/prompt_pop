@@ -19,10 +19,7 @@ from cryptography.x509.oid import NameOID
 
 def start_proxy(root, temporary, backend):
     # Use the shipped static security headers instead of a different test policy.
-    import os
-    env = {**os.environ, 'BACKEND_ORIGIN': 'https://api.example'}
-    config = json.loads(subprocess.check_output(['node', '--input-type=module', '-e',
-        "import {config} from './frontend/vercel.ts'; console.log(JSON.stringify(config))"], cwd=root, env=env, text=True))
+    config = json.loads((root / 'frontend/vercel.json').read_text())
     static_headers = {h['key']: h['value'] for h in config['headers'][0]['headers']}
     assets = (root / 'frontend' / 'dist').resolve()
     excluded = {'connection', 'transfer-encoding', 'keep-alive', 'content-length', 'server', 'date'}

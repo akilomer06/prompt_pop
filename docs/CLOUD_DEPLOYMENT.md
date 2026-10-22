@@ -13,7 +13,7 @@ The free Supabase project is **Prompt Pop**, reference jdblbtjlpdfzwhybliab, in 
 1. Use Supabase's **session pooler** URL for IPv4 compatibility, with sslmode=require. Use the dedicated application login. The promptpop schema must exist and grant that login USAGE/CREATE. Keep it outside schemas exposed to the Data API.
 2. Create the **private** promptpop-private Storage bucket. Add no anonymous read/upload policies. The backend needs a server-only secret/service-role key. Startup refuses a public bucket.
 3. Apply the root render.yaml in the confirmed OmerAkil workspace. Verify the API plan is **Free**. Supply DATABASE_URL, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and APP_ORIGIN privately. Keep workspace subscriptions and unrelated services unchanged.
-4. Import akilomer06/prompt_pop into Vercel as **frontend only**: root frontend, Vite, Node 24, npm ci, npm run build, output dist. Set BACKEND_ORIGIN to the actual Render HTTPS origin without an /api suffix.
+4. Import akilomer06/prompt_pop into Vercel as **frontend only**: root frontend, Vite, Node 24, npm ci, npm run build, output dist. The checked-in frontend/vercel.json routes /api directly to the assigned https://prompt-pop-api.onrender.com service; no frontend environment variable is needed.
 5. Set Render's APP_ORIGIN to the actual assigned Vercel production HTTPS origin, without a path/trailing slash. Complete this connection before sharing the app. Do not guess a domain or trust every *.vercel.app site.
 6. Wait for healthy deployments. On Vercel, /api/health must return JSON, /api/me must return 401 before login, and unknown API paths must return 404. Sign in with the private organizer credentials. Restart Render and verify records, sessions and files survive.
 
@@ -48,7 +48,7 @@ This traffic can reduce idle cold starts. **It cannot guarantee an always-runnin
 | MAX_IMAGE_PIXELS | 8000000 on the free backend |
 | BOOTSTRAP_ADMIN_PASSWORD | Private first-organizer secret; redeploys never reset existing admins |
 
-Vercel needs only BACKEND_ORIGIN. GitHub's health workflow needs only RENDER_HEALTH_URL. Neither receives database/storage credentials. Private API responses use browser/CDN no-store policies. Upload failures roll back event changes and attempt to remove uncommitted objects.
+Vercel needs no secrets or API-origin environment variable; its routing is defined in frontend/vercel.json. GitHub's health workflow needs only RENDER_HEALTH_URL. Neither receives database/storage credentials. Private API responses use browser/CDN no-store policies. Upload failures roll back event changes and attempt to remove uncommitted objects.
 
 Back up the database and bucket together. Provider outages and free quotas can interrupt timed events; test intended participant capacity. Protocol tests do not establish provider uptime guarantees.
 
