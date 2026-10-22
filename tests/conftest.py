@@ -2,9 +2,17 @@ import os
 import atexit
 import tempfile
 from pathlib import Path
+from urllib.parse import urlsplit
 
 ROOT = tempfile.TemporaryDirectory(prefix='promptpop-tests-')
-os.environ['DATABASE_URL'] = 'sqlite:///' + str(Path(ROOT.name) / 'test.db').replace('\\', '/')
+test_database = os.getenv('PROMPTPOP_TEST_DATABASE_URL')
+if test_database:
+    parsed = urlsplit(test_database)
+    # The fixture drops its schema. Never accept a live or remote event database.
+    if (parsed.scheme not in ('postgresql', 'postgresql+psycopg') or
+            parsed.hostname not in ('127.0.0.1', 'localhost') or parsed.path != '/promptpop_test'):
+        raise RuntimeError('PostgreSQL tests require a local database named promptpop_test.')
+os.environ['DATABASE_URL'] = test_database or 'sqlite:///' + str(Path(ROOT.name) / 'test.db').replace('\\', '/')
 os.environ['STORAGE_DIR'] = str(Path(ROOT.name) / 'assets')
 os.environ['APP_ORIGIN'] = 'http://testserver'
 os.environ['APP_ENV'] = 'development'
