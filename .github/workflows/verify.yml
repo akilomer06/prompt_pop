@@ -2,7 +2,7 @@ name: Verify
 on: [push, pull_request]
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -18,7 +18,7 @@ jobs:
         working-directory: frontend
       - run: npm run build
         working-directory: frontend
-      - run: pytest -q
+      - run: python -m pytest -q
       - run: node --test tests/vercel-config.test.mjs
       - run: python scripts/validate-hosting.py
       - run: python -m playwright install --with-deps chromium
