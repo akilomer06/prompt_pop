@@ -2,6 +2,10 @@
 
 The frontend is a Vite static build on Vercel. Vercel proxies `/api/:path*` directly to one Render FastAPI instance. Render PostgreSQL stores event state and a persistent disk stores private uploads. Browser URLs, downloads, cookies and uploads stay on the Vercel origin. No cross-origin browser authentication or CORS configuration is needed.
 
+## Current deployment status
+
+The configuration is prepared and locally verified. On 22 October 2026, activation stopped at Render's payment requirement at the owner's request. No Prompt Pop Render service, database or upload disk has been provisioned, and no Vercel production deployment has been created. The application is not publicly live. Resume the provider setup below only when paid hosting is authorized.
+
 ## Provider setup
 
 1. Import `akilomer06/prompt_pop` into Vercel. Select **frontend as a standalone project**, root directory `frontend`, Vite, Node 24, `npm ci`, `npm run build`, output `dist`. Do not select the detected multi-service setup: the Python backend belongs on Render.
