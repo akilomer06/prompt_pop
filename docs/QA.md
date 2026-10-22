@@ -8,6 +8,7 @@
 | --- | --- |
 | TypeScript and Vite production build | Passed |
 | Backend behavioral/security suite | 35 passed |
+| PostgreSQL 17 backend suite in isolated GitHub CI | 35 passed |
 | Render Blueprint and Vercel config against official schemas | Passed |
 | Vercel configuration rejection/routing tests | 2 passed |
 | Separate HTTPS frontend proxy and API-only backend | Full competition journey passed; Secure cookies, private caching, API 404 and multipart upload above 4.5 MB verified locally |
@@ -54,6 +55,6 @@ Focus containment is checked by tabbing around the native confirmation dialog. A
 
 ## Practical limits
 
-There is no claim of zero defects or a blanket accessibility certification. A manual screen-reader sweep, full 200% browser-zoom testing, Safari/Firefox/WebKit device coverage, event-scale load testing, PostgreSQL runtime validation, a container build and a public deployment were not performed in this environment. The SQLite-backed application, actual Chromium journey and the enumerated assertions were verified.
+There is no claim of zero defects or a blanket accessibility certification. A manual screen-reader sweep, full 200% browser-zoom testing, Safari/Firefox/WebKit device coverage, event-scale load testing, the application Docker build and a public deployment were not performed. The backend suite passed on local SQLite and on an isolated PostgreSQL 17 service in GitHub's Linux CI. Both browser topologies were verified locally and on the Linux runner. The actual managed Render/Vercel deployment remains pending the owner's decision to activate paid resources.
 
 ChatGPT authenticated session capture and generation-event tracking were not verified and are unavailable in the application. The primary adapter is deliberately not represented as working. No external vision evaluator is configured; manual judging is verified. These are the remaining integration boundaries described in RESEARCH.md and DEPLOYMENT.md.
