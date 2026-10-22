@@ -7,7 +7,10 @@
 | Gate | Result |
 | --- | --- |
 | TypeScript and Vite production build | Passed |
-| Backend behavioral/security suite | 27 passed |
+| Backend behavioral/security suite | 35 passed |
+| Render Blueprint and Vercel config against official schemas | Passed |
+| Vercel configuration rejection/routing tests | 2 passed |
+| Separate HTTPS frontend proxy and API-only backend | Full competition journey passed; Secure cookies, private caching, API 404 and multipart upload above 4.5 MB verified locally |
 | Chromium end-to-end competition journey | Passed |
 | Browser runtime errors | None in the completed journey |
 | axe accessibility checks | Zero reported violations in 20 captured desktop/mobile states |
@@ -31,7 +34,7 @@ The backend test run emits one upstream Starlette TestClient deprecation warning
 
 The browser registers a team through the actual form, signs in two teams, releases the quiz through a confirmation dialog, saves answers, refreshes, disconnects/reconnects a team, retries an unsaved answer, pauses and resumes the round, uploads creative work, restores its receipt, inspects side-by-side reference/submission images, saves/rejects/reverses a judge review, handles evaluator unavailability, releases a logo brief, submits the final logo, publishes results and downloads a CSV. The logo manual workflow is also exercised with browser local storage unavailable.
 
-Focus containment is checked by tabbing around the native confirmation dialog. Authentication is completed using only the keyboard. Mobile navigation is exercised. Every capture runs axe WCAG A/AA rules and checks page-level overflow. Browser reports and screenshots are written to `test-results/browser-report.json` and neighboring PNGs.
+Focus containment is checked by tabbing around the native confirmation dialog. Authentication is completed using only the keyboard. Mobile navigation is exercised. Every capture runs axe WCAG A/AA rules and checks page-level overflow. Browser reports and screenshots are written to `test-results/combined/` and `test-results/split/`, with 20 captured states for each topology. The split run models the Vercel/Render request flow locally; cloud provider behavior still requires deployed verification.
 
 ## Design and usability refinement
 

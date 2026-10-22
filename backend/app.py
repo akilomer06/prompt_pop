@@ -20,14 +20,16 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from PIL import Image, ImageOps
-from sqlalchemy import select, delete, func
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select, delete, func, text
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from .models import (Session, Competition, Task, Question, Answer, Team, User, AuthSession,
                      Asset, Submission, Draft, RequestReceipt, Incident, Evaluation, Audit)
 from .seed import initialize
 from .security import password_hash, verify_password, token_hash, current_user, require
 from .integrations import capabilities, evaluate
+from .config import allowed_origins, validate_production
+from .bootstrap import bootstrap_admin
 
 STORAGE = Path(os.getenv('STORAGE_DIR', './data/assets')).resolve()
 STORAGE.mkdir(parents=True, exist_ok=True)
@@ -42,7 +44,9 @@ def abort(condition, status, message):
 
 @asynccontextmanager
 async def lifespan(app):
+    validate_production()
     initialize()
+    bootstrap_admin()
     with Session.begin() as db:
         for run in db.scalars(select(Evaluation).where(Evaluation.status == 'queued')):
             run.status, run.result = 'failed', {'message':'Evaluation interrupted by server restart. Retry or score manually.'}
@@ -54,7 +58,8 @@ app = FastAPI(title='Prompt Pop 2K26', lifespan=lifespan, docs_url=None, redoc_u
 async def security_headers(request, call_next):
     if request.method not in ('GET', 'HEAD', 'OPTIONS'):
         origin = request.headers.get('origin')
-        allowed = {os.getenv('APP_ORIGIN', 'http://localhost:5173'), str(request.base_url).rstrip('/')}
+        allowed = allowed_origins()
+        if os.getenv('APP_ENV') != 'production': allowed.add(str(request.base_url).rstrip('/'))
         if origin and origin not in allowed:
             return Response('Cross-origin action rejected.', status_code=403)
         if request.headers.get('sec-fetch-site') == 'cross-site':
@@ -65,6 +70,7 @@ async def security_headers(request, call_next):
     response = await call_next(request)
     response.headers.update({'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin',
                              'X-Frame-Options': 'DENY', 'Cache-Control': 'no-store',
+                             'CDN-Cache-Control': 'no-store', 'Vercel-CDN-Cache-Control': 'no-store',
                              'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
                              'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"})
     if os.getenv('COOKIE_SECURE', 'false').lower() == 'true': response.headers['Strict-Transport-Security'] = 'max-age=31536000'
@@ -636,9 +642,14 @@ def audit_log(user=Depends(auth), db=Depends(database, scope='function')):
     return [dict(id=a.id, actor=names.get(a.actor, a.actor), action=a.action, timestamp=a.timestamp, details=a.details) for a in db.scalars(select(Audit).order_by(Audit.timestamp.desc()).limit(500))]
 
 @app.get('/api/health')
-def health(): return {'status': 'ok'}
+def health():
+    try:
+        with Session() as db: db.execute(text('SELECT 1'))
+    except SQLAlchemyError:
+        raise HTTPException(503, 'Database is unavailable.')
+    return {'status': 'ok'}
 
-if Path('frontend/dist').is_dir():
+if os.getenv('SERVE_FRONTEND', 'true').lower() == 'true' and Path('frontend/dist').is_dir():
     app.mount('/assets', StaticFiles(directory='frontend/dist/assets'), name='static-assets')
     @app.get('/{path:path}')
     def frontend(path: str):

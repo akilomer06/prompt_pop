@@ -7,6 +7,10 @@ ROOT = tempfile.TemporaryDirectory(prefix='promptpop-tests-')
 os.environ['DATABASE_URL'] = 'sqlite:///' + str(Path(ROOT.name) / 'test.db').replace('\\', '/')
 os.environ['STORAGE_DIR'] = str(Path(ROOT.name) / 'assets')
 os.environ['APP_ORIGIN'] = 'http://testserver'
+os.environ['APP_ENV'] = 'development'
+os.environ['COOKIE_SECURE'] = 'false'
+for key in ('APP_ORIGINS', 'BOOTSTRAP_ADMIN_PASSWORD', 'BOOTSTRAP_ADMIN_USERNAME'):
+    os.environ.pop(key, None)
 os.environ.pop('EVALUATOR_URL', None)
 
 import pytest

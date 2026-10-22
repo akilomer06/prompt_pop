@@ -2,10 +2,11 @@ import os
 from pathlib import Path
 from sqlalchemy import create_engine, String, Float, Integer, ForeignKey, JSON, UniqueConstraint, event
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
+from .config import database_url
 
 Path('data').mkdir(exist_ok=True)
-DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///./data/promptpop.db')
-engine = create_engine(DATABASE_URL, connect_args={'check_same_thread': False, 'timeout': 30} if DATABASE_URL.startswith('sqlite') else {}, pool_pre_ping=True)
+DATABASE_URL = database_url(os.getenv('DATABASE_URL', 'sqlite:///./data/promptpop.db'))
+engine = create_engine(DATABASE_URL, connect_args={'check_same_thread': False, 'timeout': 30} if DATABASE_URL.startswith('sqlite') else {'connect_timeout': 10}, pool_pre_ping=True)
 if DATABASE_URL.startswith('sqlite'):
     @event.listens_for(engine, 'connect')
     def sqlite_settings(connection, _):

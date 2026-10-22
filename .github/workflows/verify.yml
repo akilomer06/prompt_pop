@@ -19,8 +19,13 @@ jobs:
       - run: npm run build
         working-directory: frontend
       - run: pytest -q
+      - run: node --test tests/vercel-config.test.mjs
+      - run: python scripts/validate-hosting.py
       - run: python -m playwright install --with-deps chromium
       - run: python tests/e2e_browser.py
+      - run: python tests/e2e_browser.py
+        env:
+          E2E_SPLIT_HOSTING: '1'
       - uses: actions/upload-artifact@v4
         if: always()
         with:

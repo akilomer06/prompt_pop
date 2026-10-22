@@ -2,6 +2,8 @@
 
 ## Supported topology
 
+**For the requested Vercel frontend and Render backend, follow [CLOUD_DEPLOYMENT.md](CLOUD_DEPLOYMENT.md).** The combined hosting option below remains available for local/container operation.
+
 One FastAPI instance serves the built frontend and API behind an HTTPS reverse proxy. A PostgreSQL database can be managed externally; the application connects through a standard SQLAlchemy `postgresql+psycopg` URL. Private assets live on the instance's persistent disk, never in the public static directory. The local development alternative is SQLite on the same persistent volume. Multi-replica shared object storage and a distributed evaluation queue are not implemented.
 
 Do not launch multiple SQLite workers. The process-wide transaction lock and PostgreSQL competition-row locks protect mutations, but polling, rate limiting, asset storage, and the background evaluation runner are designed for a single backend process. Benchmark the intended number of participants on the actual hosting environment before an event. Browser QA used two real teams, and the API suite tests concurrent requests; these are not a capacity benchmark.

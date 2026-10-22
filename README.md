@@ -25,7 +25,7 @@ npm.cmd --prefix frontend run build
 
 On macOS/Linux replace `.venv\Scripts\python.exe` with `.venv/bin/python` and `npm.cmd` with `npm`. Create a separate judge with `python -m backend.cli judge-name --role judge --generate`. Save generated passwords privately; they are printed only once. Organizer accounts are created through the local CLI, never through a public registration endpoint.
 
-For development, run the backend on port 8000 and `npm --prefix frontend run dev` in a second terminal. Vite serves http://localhost:5173 and proxies `/api` to FastAPI. The production build is served from FastAPI itself; no separate frontend server is needed.
+For development, run the backend on port 8000 and `npm --prefix frontend run dev` in a second terminal. Vite serves http://localhost:5173 and proxies `/api` to FastAPI. The local combined build can be served from FastAPI. Cloud hosting uses **Vercel for the frontend and Render for the backend**, with `/api` proxied through Vercel. See the [cloud deployment guide](docs/CLOUD_DEPLOYMENT.md).
 
 Copy `.env.example` to `.env` if configuration is needed, and pass `--env-file .env` to uvicorn. The helper start script does this automatically if `.env` exists. Environment variables are read on backend startup. No secrets enter the frontend bundle.
 
@@ -61,6 +61,10 @@ This repository supplies deployment configuration; it has not been deployed to a
 .\.venv\Scripts\python.exe -m pytest -q
 npm.cmd --prefix frontend run build
 .\.venv\Scripts\python.exe -m playwright install chromium
+.\.venv\Scripts\python.exe tests/e2e_browser.py
+node --test tests/vercel-config.test.mjs
+.\.venv\Scripts\python.exe scripts/validate-hosting.py
+$env:E2E_SPLIT_HOSTING='1'
 .\.venv\Scripts\python.exe tests/e2e_browser.py
 ```
 
