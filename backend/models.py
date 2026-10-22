@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from sqlalchemy import create_engine, String, Float, Integer, ForeignKey, JSON, UniqueConstraint, event
+from sqlalchemy import create_engine, String, Float, Integer, ForeignKey, JSON, UniqueConstraint, event, MetaData
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 from .config import database_url
 
@@ -15,7 +15,9 @@ if DATABASE_URL.startswith('sqlite'):
 
 Session = sessionmaker(engine, expire_on_commit=False)
 
-class Base(DeclarativeBase): pass
+class Base(DeclarativeBase):
+    # Keep application accounts/sessions outside Supabase's publicly exposed Data API schema.
+    metadata = MetaData(schema=os.getenv('DATABASE_SCHEMA') or None)
 
 class Team(Base):
     __tablename__ = 'teams'

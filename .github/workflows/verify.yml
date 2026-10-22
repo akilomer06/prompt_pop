@@ -54,3 +54,8 @@ jobs:
       - run: python -m pytest -q
         env:
           PROMPTPOP_TEST_DATABASE_URL: postgresql://promptpop_test:isolated-ci-only@127.0.0.1:5432/promptpop_test
+      - name: Verify private application schema
+        run: python -m pytest -q
+        env:
+          PROMPTPOP_TEST_DATABASE_URL: postgresql://promptpop_test:isolated-ci-only@127.0.0.1:5432/promptpop_test
+          PROMPTPOP_TEST_DATABASE_SCHEMA: promptpop_test

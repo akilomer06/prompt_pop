@@ -1,0 +1,21 @@
+name: Backend health
+on:
+  workflow_dispatch:
+  schedule:
+    # Offset from the top of the hour; scheduled GitHub runs can still be delayed.
+    - cron: '3,13,23,33,43,53 * * * *'
+permissions:
+  contents: read
+concurrency:
+  group: promptpop-backend-health
+  cancel-in-progress: false
+jobs:
+  check:
+    if: vars.RENDER_HEALTH_URL != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/check-health.py
+        env:
+          RENDER_HEALTH_URL: ${{ vars.RENDER_HEALTH_URL }}

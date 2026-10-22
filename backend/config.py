@@ -1,5 +1,6 @@
 """Hosting settings shared by local development and the split production deployment."""
 import os
+import re
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -32,6 +33,18 @@ def validate_production():
         if (parsed.scheme != 'https' or not parsed.hostname or parsed.username or
                 parsed.password or parsed.path or parsed.query or parsed.fragment or '*' in origin):
             raise RuntimeError('Production origins must be exact HTTPS origins without paths or wildcards.')
+    mode = os.getenv('ASSET_STORAGE', 'local')
+    if mode == 'supabase':
+        url = os.getenv('SUPABASE_URL', '')
+        if not re.fullmatch(r'https://[a-z0-9]+\.supabase\.co/?', url):
+            raise RuntimeError('Set SUPABASE_URL to the project HTTPS origin.')
+        key = os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')
+        if len(key) < 30 or key.startswith('sb_publishable_'):
+            raise RuntimeError('Set the server-only Supabase secret/service-role key.')
+        if not re.fullmatch(r'[a-z0-9-]{1,63}', os.getenv('SUPABASE_BUCKET', 'promptpop-private')):
+            raise RuntimeError('Use a lowercase Supabase bucket name without paths.')
+        return
+    if mode != 'local': raise RuntimeError('ASSET_STORAGE must be local or supabase.')
     data = Path(os.getenv('PERSISTENT_DATA_DIR', ''))
     assets = Path(os.getenv('STORAGE_DIR', ''))
     if (not data.is_absolute() or not assets.is_absolute() or

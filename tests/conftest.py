@@ -16,6 +16,13 @@ os.environ['DATABASE_URL'] = test_database or 'sqlite:///' + str(Path(ROOT.name)
 os.environ['STORAGE_DIR'] = str(Path(ROOT.name) / 'assets')
 os.environ['APP_ORIGIN'] = 'http://testserver'
 os.environ['APP_ENV'] = 'development'
+os.environ['ASSET_STORAGE'] = 'local'
+test_schema = os.getenv('PROMPTPOP_TEST_DATABASE_SCHEMA')
+if test_schema:
+    if not test_database or test_schema != 'promptpop_test':
+        raise RuntimeError('Schema tests require the isolated local PostgreSQL test database.')
+    os.environ['DATABASE_SCHEMA'] = test_schema
+else: os.environ.pop('DATABASE_SCHEMA', None)
 os.environ['COOKIE_SECURE'] = 'false'
 for key in ('APP_ORIGINS', 'BOOTSTRAP_ADMIN_PASSWORD', 'BOOTSTRAP_ADMIN_USERNAME'):
     os.environ.pop(key, None)
@@ -24,6 +31,9 @@ os.environ.pop('EVALUATOR_URL', None)
 import pytest
 from fastapi.testclient import TestClient
 from backend.models import Base, engine, Session, User
+if test_schema:
+    from sqlalchemy.schema import CreateSchema
+    with engine.begin() as connection: connection.execute(CreateSchema(test_schema, if_not_exists=True))
 from backend.seed import initialize
 from backend.security import password_hash
 from backend.app import app, LIMITS

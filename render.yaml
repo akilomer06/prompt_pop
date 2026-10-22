@@ -5,17 +5,13 @@ services:
     name: prompt-pop-api
     runtime: python
     region: singapore
-    plan: 1c-2g
+    plan: free
     branch: main
     autoDeployTrigger: checksPass
     buildCommand: pip install -r backend/requirements-production.lock.txt
     startCommand: uvicorn backend.app:app --host 0.0.0.0 --port $PORT --workers 1
     healthCheckPath: /api/health
     numInstances: 1
-    disk:
-      name: prompt-pop-assets
-      mountPath: /var/data
-      sizeGB: 10
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.14
@@ -28,21 +24,20 @@ services:
       - key: APP_ORIGIN
         sync: false
       - key: DATABASE_URL
-        fromDatabase:
-          name: prompt-pop-db
-          property: connectionString
-      - key: PERSISTENT_DATA_DIR
-        value: /var/data
-      - key: STORAGE_DIR
-        value: /var/data/assets
+        sync: false
+      - key: DATABASE_SCHEMA
+        value: promptpop
+      - key: ASSET_STORAGE
+        value: supabase
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: promptpop-private
+      - key: MAX_IMAGE_PIXELS
+        value: "8000000"
       - key: BOOTSTRAP_ADMIN_USERNAME
         value: organizer
       - key: BOOTSTRAP_ADMIN_PASSWORD
         generateValue: true
-databases:
-  - name: prompt-pop-db
-    region: singapore
-    plan: 0.1c-256mb
-    postgresMajorVersion: "17"
-    diskSizeGB: 5
-    ipAllowList: []

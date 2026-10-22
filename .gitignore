@@ -6,6 +6,7 @@ dist/
 data/
 .env
 local-access.txt
+cloud-access.txt
 test-results/
 playwright-report/
 *.pyc

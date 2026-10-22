@@ -7,11 +7,13 @@
 | Gate | Result |
 | --- | --- |
 | TypeScript and Vite production build | Passed |
-| Backend behavioral/security suite | 35 passed |
+| Backend behavioral/security suite | 45 tests, including remote storage and health monitoring |
 | PostgreSQL 17 backend suite in isolated GitHub CI | 35 passed |
 | Render Blueprint and Vercel config against official schemas | Passed |
 | Vercel configuration rejection/routing tests | 2 passed |
 | Separate HTTPS frontend proxy and API-only backend | Full competition journey passed; Secure cookies, private caching, API 404 and multipart upload above 4.5 MB verified locally |
+| Supabase protocol tests | Private-bucket enforcement, persistence across clients, team isolation, ZIP export and rollback cleanup passed |
+| Health monitor tests | Cold-start HTML retry and unsafe destination rejection passed |
 | Chromium end-to-end competition journey | Passed |
 | Browser runtime errors | None in the completed journey |
 | axe accessibility checks | Zero reported violations in 20 captured desktop/mobile states |

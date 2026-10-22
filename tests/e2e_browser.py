@@ -20,6 +20,8 @@ os.environ['DATABASE_URL']='sqlite:///'+str(Path(TEMP.name)/'event.db').replace(
 os.environ['STORAGE_DIR']=str(Path(TEMP.name)/'assets')
 os.environ['APP_ORIGIN']=URL
 os.environ['APP_ENV']='development'
+os.environ['ASSET_STORAGE']='local'
+os.environ.pop('DATABASE_SCHEMA',None)
 os.environ['COOKIE_SECURE']='true' if SPLIT else 'false'
 os.environ['SERVE_FRONTEND']='false' if SPLIT else 'true'
 for key in ('APP_ORIGINS','BOOTSTRAP_ADMIN_PASSWORD','BOOTSTRAP_ADMIN_USERNAME'): os.environ.pop(key,None)

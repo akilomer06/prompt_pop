@@ -13,10 +13,10 @@ import zipfile
 from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 
 from fastapi import FastAPI, Depends, Request, Response, HTTPException, UploadFile, File, Form, BackgroundTasks
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from PIL import Image, ImageOps
@@ -30,13 +30,14 @@ from .security import password_hash, verify_password, token_hash, current_user, 
 from .integrations import capabilities, evaluate
 from .config import allowed_origins, validate_production
 from .bootstrap import bootstrap_admin
+from .storage import get_storage, StorageError, AssetMissing
 
-STORAGE = Path(os.getenv('STORAGE_DIR', './data/assets')).resolve()
-STORAGE.mkdir(parents=True, exist_ok=True)
+STORAGE = get_storage()
 LOCK = threading.Lock()
 RATE_LOCK = threading.Lock()
 LIMITS = defaultdict(deque)
-Image.MAX_IMAGE_PIXELS = 25_000_000
+MAX_IMAGE_PIXELS = int(os.getenv('MAX_IMAGE_PIXELS', '25000000'))
+Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
 
 def uid(): return str(uuid.uuid4())
 def abort(condition, status, message):
@@ -45,6 +46,7 @@ def abort(condition, status, message):
 @asynccontextmanager
 async def lifespan(app):
     validate_production()
+    STORAGE.check()
     initialize()
     bootstrap_admin()
     with Session.begin() as db:
@@ -53,6 +55,18 @@ async def lifespan(app):
     yield
 
 app = FastAPI(title='Prompt Pop 2K26', lifespan=lifespan, docs_url=None, redoc_url=None)
+
+@app.exception_handler(StorageError)
+async def storage_error(request, exc):
+    return JSONResponse({'detail': str(exc)}, status_code=404 if isinstance(exc, AssetMissing) else 503)
+
+def clean_new_assets(db):
+    for asset_id in db.info.get('new_assets', []):
+        try: STORAGE.delete(asset_id)
+        except StorageError:
+            # Log only the opaque ID, never connection details or provider credentials.
+            import logging
+            logging.getLogger(__name__).warning('Orphan asset cleanup needed: %s', asset_id)
 
 @app.middleware('http')
 async def security_headers(request, call_next):
@@ -84,11 +98,11 @@ def database():
             db.commit()
         except IntegrityError:
             db.rollback()
-            for path in db.info.get('new_assets', []): path.unlink(missing_ok=True)
+            clean_new_assets(db)
             raise HTTPException(409, 'This record already exists. Refresh and try again.')
         except Exception:
             db.rollback()
-            for path in db.info.get('new_assets', []): path.unlink(missing_ok=True)
+            clean_new_assets(db)
             raise
 
 def auth(request: Request, db=Depends(database, scope='function')): return current_user(request, db)
@@ -385,9 +399,9 @@ def store_image(db, raw, filename, team_id, task_id, kind):
             warnings.simplefilter('error', Image.DecompressionBombWarning)
             image = Image.open(io.BytesIO(raw))
             abort(image.format not in ('PNG', 'JPEG', 'WEBP') or getattr(image, 'is_animated', False), 422, 'Use a still PNG, JPEG, or WebP image.')
+            abort(image.width < 16 or image.height < 16 or image.width * image.height > MAX_IMAGE_PIXELS, 422, f'Image dimensions must be at least 16 pixels and under {MAX_IMAGE_PIXELS / 1_000_000:g} megapixels.')
             image.load()
             image = ImageOps.exif_transpose(image)
-            abort(image.width < 16 or image.height < 16 or image.width * image.height > 25_000_000, 422, 'Image dimensions must be at least 16 pixels and under 25 megapixels.')
             output = io.BytesIO()
             normalized = image.convert('RGBA')
             normalized.info.clear()
@@ -395,8 +409,8 @@ def store_image(db, raw, filename, team_id, task_id, kind):
     except HTTPException: raise
     except Exception: raise HTTPException(422, 'This file could not be decoded as a supported image.')
     asset = Asset(id=uid(), team_id=team_id, task_id=task_id, kind=kind, mime='image/png', filename=Path(filename or 'image.png').name[:200])
-    (STORAGE / asset.id).write_bytes(output.getvalue())
-    db.info.setdefault('new_assets', []).append(STORAGE / asset.id)
+    db.info.setdefault('new_assets', []).append(asset.id)
+    STORAGE.write(asset.id, output.getvalue())
     db.add(asset)
     db.flush()
     return asset
@@ -417,8 +431,8 @@ def get_asset(asset_id: str, user=Depends(auth), db=Depends(database, scope='fun
     asset = db.get(Asset, asset_id)
     abort(not asset, 404, 'Asset not found.')
     abort(user.role == 'participant' and (asset.kind == 'reference' or asset.team_id != user.team_id), 403, 'This asset is private.')
-    abort(not (STORAGE / asset.id).is_file(), 404, 'Asset file is unavailable. Contact an organizer.')
-    return FileResponse(STORAGE / asset.id, media_type=asset.mime, filename=asset.filename, content_disposition_type='inline')
+    return Response(STORAGE.read(asset.id), media_type=asset.mime,
+                    headers={'Content-Disposition': "inline; filename*=UTF-8''" + quote(asset.filename, safe='')})
 
 class DraftInput(BaseModel):
     prompt: str = Field(default='', max_length=20000)
@@ -624,8 +638,7 @@ def export_assets(user=Depends(auth), db=Depends(database, scope='function')):
             for asset_id in [s.asset_id, s.evidence_id]:
                 if not asset_id: continue
                 asset = db.get(Asset, asset_id)
-                path = STORAGE / asset.id
-                if path.is_file(): archive.write(path, f'{s.team_id}/task-{s.task_id}/{asset.kind}-{asset.id}.png')
+                archive.writestr(f'{s.team_id}/task-{s.task_id}/{asset.kind}-{asset.id}.png', STORAGE.read(asset.id))
             manifest.append(submission_view(s))
         archive.writestr('submissions.json', json.dumps(manifest, indent=2))
     bundle.seek(0)

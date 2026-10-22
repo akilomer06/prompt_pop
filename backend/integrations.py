@@ -15,12 +15,12 @@ def evaluate(submission, task, asset, storage):
         return 'unavailable', dict(message='No authorized vision evaluator configured. Score this submission using the rubric.')
     if not endpoint.startswith('https://'):
         return 'failed', dict(message='Evaluator must use HTTPS.')
-    payload = dict(submission_id=submission.id, revision=submission.revision, round=task.round,
-                   prompt=submission.prompt, rationale=submission.rationale, brief=task.brief,
-                   rubric=task.rubric, image_base64=base64.b64encode((storage / asset.id).read_bytes()).decode(), mime=asset.mime)
-    if task.reference_id:
-        payload['reference_base64'] = base64.b64encode((storage / task.reference_id).read_bytes()).decode()
     try:
+        payload = dict(submission_id=submission.id, revision=submission.revision, round=task.round,
+                       prompt=submission.prompt, rationale=submission.rationale, brief=task.brief,
+                       rubric=task.rubric, image_base64=base64.b64encode(storage.read(asset.id)).decode(), mime=asset.mime)
+        if task.reference_id:
+            payload['reference_base64'] = base64.b64encode(storage.read(task.reference_id)).decode()
         response = httpx.post(endpoint, json=payload, headers={'Authorization': 'Bearer ' + os.getenv('EVALUATOR_SECRET', '')}, timeout=25, follow_redirects=False)
         response.raise_for_status()
         result = response.json()
