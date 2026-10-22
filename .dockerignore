@@ -1,0 +1,10 @@
+.git
+.venv
+data
+.env
+local-access.txt
+frontend/node_modules
+frontend/dist
+test-results
+docs/research
+__pycache__
