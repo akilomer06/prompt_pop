@@ -1,6 +1,6 @@
 # Verification report
 
-22 October 2026. Testing ran against the real built application on Windows with Python 3.12, Node.js 24, and headless Chromium. Automated browser fixtures use their own temporary server, database, accounts and test artwork. The live installation remains an unstarted event with no test teams or test reference assets.
+22–23 October 2026. Testing ran against the real built application on Windows with Python 3.12, Node.js 24, and headless Chromium. Automated browser fixtures use their own temporary server, database, accounts and test artwork. The live installation remains an unstarted event with no test teams or test reference assets.
 
 ## Results
 
@@ -8,7 +8,7 @@
 | --- | --- |
 | TypeScript and Vite production build | Passed |
 | Backend behavioral/security suite | 45 tests, including remote storage and health monitoring |
-| PostgreSQL 17 backend suite in isolated GitHub CI | 35 passed |
+| PostgreSQL 17 backend suite in isolated GitHub CI | Passed with both default and private application schemas |
 | Render Blueprint and Vercel config against official schemas | Passed |
 | Vercel configuration rejection/routing tests | 2 passed |
 | Separate HTTPS frontend proxy and API-only backend | Full competition journey passed; Secure cookies, private caching, API 404 and multipart upload above 4.5 MB verified locally |
@@ -55,8 +55,14 @@ Focus containment is checked by tabbing around the native confirmation dialog. A
 | A closed task could still display its future scheduled countdown | Closed tasks display zero and lead organizers to results after the final challenge |
 | JPEG orientation metadata could be removed before applying its rotation | Normalize orientation before stripping metadata; verify the stored image dimensions |
 
+## Deployed verification
+
+On 23 October 2026, the free Render API and Vercel frontend were verified live. Both direct and proxied `/api/health` returned JSON 200. Anonymous `/api/me` and asset requests returned 401; unknown API routes returned 404. Organizer login through the Vercel origin succeeded with Secure, HttpOnly, SameSite=Strict cookies. Authenticated state, team and question endpoints returned 200 with no-store caching. A real browser reached the connected organizer control room. Organizer sessions and competition data survived a fresh backend redeployment. The event remained at round 0 with seven default tasks and no teams. Supabase startup checked the private bucket, and its security advisor reported no findings. The manually dispatched GitHub health workflow passed: [run 39892840175](https://github.com/akilomer06/prompt_pop/actions/runs/39892840175).
+
+The deployed code passed [GitHub verification 39833091634](https://github.com/akilomer06/prompt_pop/actions/runs/39833091634), including PostgreSQL and both Chromium hosting topologies. Cloud screenshots are retained locally in `test-results/cloud/`.
+
 ## Practical limits
 
-There is no claim of zero defects or a blanket accessibility certification. A manual screen-reader sweep, full 200% browser-zoom testing, Safari/Firefox/WebKit device coverage, event-scale load testing, the application Docker build and a public deployment were not performed. The backend suite passed on local SQLite and on an isolated PostgreSQL 17 service in GitHub's Linux CI. Both browser topologies were verified locally and on the Linux runner. The actual managed Render/Vercel deployment remains pending the owner's decision to activate paid resources.
+There is no claim of zero defects or a blanket accessibility certification. A manual screen-reader sweep, full 200% browser-zoom testing, Safari/Firefox/WebKit device coverage, event-scale load testing, the application Docker build and a full live-cloud competition/upload journey were not performed. Cloud checks preserved the empty official event. The backend suite passed on local SQLite and on an isolated PostgreSQL 17 service in GitHub's Linux CI. Both browser topologies were verified locally and on the Linux runner. The managed Render/Vercel deployment uses free plans, with persistent PostgreSQL and private uploads configured on Supabase Free. Free quotas and cold starts still apply.
 
 ChatGPT authenticated session capture and generation-event tracking were not verified and are unavailable in the application. The primary adapter is deliberately not represented as working. No external vision evaluator is configured; manual judging is verified. These are the remaining integration boundaries described in RESEARCH.md and DEPLOYMENT.md.

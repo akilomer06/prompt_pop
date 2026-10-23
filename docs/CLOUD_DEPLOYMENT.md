@@ -6,6 +6,8 @@ The root render.yaml now provisions **one free API service only**. It creates no
 
 ## Current setup
 
+The public frontend is [prompt-pop-silk.vercel.app](https://prompt-pop-silk.vercel.app); its API is [prompt-pop-api.onrender.com](https://prompt-pop-api.onrender.com/api/health). Both were verified live on 23 October 2026. The Render service was created directly using the native Python runtime; `render.yaml` records the equivalent free infrastructure for reproducibility.
+
 The free Supabase project is **Prompt Pop**, reference jdblbtjlpdfzwhybliab, in the user-selected **akilomer06's Org**, region Singapore. Its private bucket is promptpop-private. Application tables belong in the promptpop schema, outside the public Data API. A dedicated promptpop_app login has permission to create/use application objects in that schema. No credentials belong in this document.
 
 ## Deploy
@@ -19,7 +21,7 @@ The free Supabase project is **Prompt Pop**, reference jdblbtjlpdfzwhybliab, in 
 
 ## Health-check traffic
 
-.github/workflows/health.yml requests backend readiness every ten minutes, offset from each hour's start. Set the repository Actions variable **RENDER_HEALTH_URL** to the actual https://your-service.onrender.com/api/health endpoint. Until configured, the workflow skips its job. A manual run is available. It requires JSON readiness, retries cold starts, sends no credentials and makes no event mutations.
+.github/workflows/health.yml requests backend readiness every ten minutes, offset from each hour's start. Set the repository Actions variable **RENDER_HEALTH_URL** to the actual https://your-service.onrender.com/api/health endpoint. The repository variable is configured for https://prompt-pop-api.onrender.com/api/health, and a manual run passed on 23 October 2026. Until configured in another repository, the workflow skips its job. A manual run is available. It requires JSON readiness, retries cold starts, sends no credentials and makes no event mutations.
 
 This traffic can reduce idle cold starts. **It cannot guarantee an always-running free service.** GitHub may delay/drop jobs and disables public-repository schedules after 60 days without repository activity. Render can restart/suspend free services and enforces shared workspace quotas.
 
